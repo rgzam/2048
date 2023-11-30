@@ -67,10 +67,14 @@ executable x2048
     -- other-extensions:
 
     -- Other library packages from which modules are imported.
-    build-depends:    base ^>=4.19.0.0, random
+    build-depends:
+        base >= 4.14 && < 5,
+        gloss >= 1.13.2.2 && < 1.15,
+        random
 
     -- Directories containing source files.
     hs-source-dirs:   app
 
     -- Base language which the package is written in.
     default-language: Haskell2010
+    
