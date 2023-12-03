@@ -19,6 +19,7 @@ initialState gridSize = GameState
   , gen   = mkStdGen 0
   }
 
+
 -- Function to render the game
 render :: GameState -> Picture
 render game = pictures
@@ -130,13 +131,8 @@ main = do
   putStrLn "Choose difficulty level (easy, medium, hard):"
   difficulty <- getLine
   let gridSize = case difficulty of
-                   "easy"   -> 4
-                   "medium" -> 6
-                   "hard"   -> 8
-                   _        -> 4  -- Default to easy if the input is invalid
-
-  play window bgColor fps (initialState gridSize) render handleInput update
-  where
-    window = InWindow "2048" (400, 400) (10, 10)
-    bgColor = black
-    fps = 60
+                    "easy" -> 4
+                    "medium" -> 6
+                    "hard" -> 8
+  let windowSize = gridSize * 100
+  play (InWindow "2048 Game" (windowSize, windowSize) (10, 10)) white 30 (initialState gridSize) render handleInput update
