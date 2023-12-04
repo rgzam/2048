@@ -19,18 +19,17 @@ initialState gridSize = GameState
   , gen   = mkStdGen 0
   }
 
-
 -- Function to render the game
-render :: GameState -> Picture
 render game = pictures
   [ drawBoard (board game)
+  , drawRestartButton
   ]
 
 -- Function to draw the game board
 drawBoard :: [[Int]] -> Picture
 drawBoard board = pictures $ concat
   [ [ drawTile x y val | (x, val) <- zip [0..] row] | (y, row) <- zip [0..] board]
-
+	
 -- Function to draw a single tile
 drawTile :: Int -> Int -> Int -> Picture
 drawTile x y val =
@@ -73,6 +72,10 @@ handleInput (EventKey (SpecialKey KeyLeft) Down _ _) game =
   moveAndAddRandom moveLeft game
 handleInput (EventKey (SpecialKey KeyRight) Down _ _) game =
   moveAndAddRandom moveRight game
+handleInput (EventKey (MouseButton LeftButton) Up _ mousePos) game =
+  if pointInRect mousePos restartButton
+     then initialState (length (board game))
+     else game  
 handleInput _ game = game
 
 -- Function to update the game state
@@ -136,3 +139,23 @@ main = do
                     "hard" -> 8
   let windowSize = gridSize * 100
   play (InWindow "2048 Game" (windowSize, windowSize) (10, 10)) white 30 (initialState gridSize) render handleInput update
+
+-- Define where the restart button should be and its size
+restartButton :: (Float, Float, Float, Float)
+restartButton = (-250, 250, 150, 75)
+
+drawRestartButton :: Picture
+drawRestartButton = uncurry translate (fstPair restartButton) $ pictures
+    [ color azure $ uncurry rectangleSolid (sndPair restartButton)
+    , translate (-50) (-10) $ scale 0.2 0.2 $ color black $ text "Restart"
+    ]
+
+fstPair :: (Float, Float, Float, Float) -> (Float, Float)
+fstPair (x, y, _, _) = (x, y)
+
+sndPair :: (Float, Float, Float, Float) -> (Float, Float)
+sndPair (_, _, w, h) = (w, h)
+
+pointInRect :: Point -> (Float, Float, Float, Float) -> Bool
+pointInRect (x, y) (rectX, rectY, width, height) =
+    x >= rectX && x <= rectX + width && y >= rectY && y <= rectY + height
