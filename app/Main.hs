@@ -2,6 +2,8 @@ import Graphics.Gloss
 import Graphics.Gloss.Interface.Pure.Game
 import System.Random
 import Data.List (transpose)
+import Data.List (permutations)
+
 
 
 -- Define the game state
@@ -147,9 +149,17 @@ moveAndAddRandom moveFn game =
 
 findEmptyCells :: GameState -> StdGen -> Int -> ([(Int, Int)], StdGen)
 findEmptyCells game gen gridSize =
-  let indices = [(x, y) | x <- [0..gridSize-1], y <- [0..gridSize-1]]
-      emptyCells = filter (\(x, y) -> (board game !! y !! x) == 0) indices
-  in (emptyCells, snd (next gen))
+    let indices = [(x, y) | x <- [0..gridSize-1], y <- [0..gridSize-1]]
+        emptyCells = filter (\(x, y) -> (board game !! y !! x) == 0) indices
+        shuffledCells = head (permutations emptyCells)  -- Shuffle the list of empty cells
+        (selectedCell, newGen) = randomElem shuffledCells gen  -- Select the first cell from the shuffled list
+    in ([selectedCell], newGen)
+  
+  -- Helper function to get a random element from a list
+randomElem :: [a] -> StdGen -> (a, StdGen)
+randomElem list gen =
+    let (index, newGen) = randomR (0, length list - 1) gen
+    in (list !! index, newGen)
 
 updateTile :: Int -> Int -> Int -> [[Int]] -> [[Int]]
 updateTile x y val board =
