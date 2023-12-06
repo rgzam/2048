@@ -123,7 +123,7 @@ restartGame game =
 -- Function to start the game with a chosen difficulty and set the grid size
 startGame :: String -> GameState -> GameState
 startGame chosenDifficulty game =
-  game { difficulty = chosenDifficulty, board = replicate (initialGridSize chosenDifficulty) (replicate (initialGridSize chosenDifficulty) 0), menuShown = False }
+  game { difficulty = chosenDifficulty, board = replicate (initialGridSize chosenDifficulty) (replicate (initialGridSize chosenDifficulty) 0), menuShown = False, score = 0 } 
 
 -- Function to update the game state
 update :: Float -> GameState -> GameState
