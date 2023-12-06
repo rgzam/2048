@@ -11,7 +11,7 @@ data GameState = GameState
   , difficulty :: String
   , menuShown  :: Bool
   }
-  
+
 -- Function to set the initial grid size based on difficulty
 initialGridSize :: String -> Int
 initialGridSize difficulty =
@@ -25,7 +25,7 @@ initialGridSize difficulty =
 initialState :: GameState
 initialState = GameState
   { board      = replicate (initialGridSize "easy") (replicate (initialGridSize "easy") 0)
-  , score      = 0 
+  , score      = 0
   , gen        = mkStdGen 0
   , difficulty = "easy"
   , menuShown  = True
@@ -50,7 +50,7 @@ renderDifficultyMenu game = pictures
 renderGame :: GameState -> Picture
 renderGame game = pictures
   [ drawTextSmall ("Difficulty: " ++ difficulty game) (-150) 210
-  , drawTextSmall ("Score: " ++ show (score game)) (-150) 250  -- score
+  , drawTextSmall ("Score: " ++ show (maximumTileValue (board game))) (-150) 250  -- score update
   , drawBoard (board game)
   ]
 
@@ -111,6 +111,10 @@ handleInput e game =
     EventKey (Char 'r') Down _ _ -> restartGame game  -- Handle restart option
     _ -> game
 
+-- Helper function to find the max value
+maximumTileValue :: [[Int]] -> Int
+maximumTileValue board = maximum (concat board)
+
 -- Function to restart the game
 restartGame :: GameState -> GameState
 restartGame game =
@@ -135,8 +139,10 @@ moveAndAddRandom moveFn game =
       (x, y) = if null emptyCells then (0, 0) else head emptyCells
       newValue = if head (randomRs (0, 1) newGen :: [Int]) == 0 then 2 else 4
       updatedBoard = updateTile x y newValue newBoard
-      updatedScore = maximum (concat updatedBoard)  -- gain max score in the grid number
-  in game { board = updatedBoard, gen = newGen, menuShown = False, score = score game + updatedScore }  -- update score
+      updatedScore = if updatedBoard /= board game  -- Check if merged
+                    then maximum (concat updatedBoard)  --Get the value of the max
+                    else 0 
+  in game { board = updatedBoard, gen = newGen, menuShown = False, score = score game + updatedScore } 
 
 findEmptyCells :: GameState -> StdGen -> Int -> ([(Int, Int)], StdGen)
 findEmptyCells game gen gridSize =
