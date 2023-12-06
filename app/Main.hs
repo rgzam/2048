@@ -9,10 +9,11 @@ import Data.List (transpose, permutations)
 -- Define the game state
 data GameState = GameState
   { board      :: [[Int]]
-  , score      :: Int 
+  , score      :: Int
   , gen        :: StdGen
   , difficulty :: String
   , menuShown  :: Bool
+  , timer      :: Float  -- Timer for game over screen
   }
 
 -- Function to set the initial grid size based on difficulty
@@ -32,13 +33,29 @@ initialState = GameState
   , gen        = mkStdGen 0
   , difficulty = "easy"
   , menuShown  = True
+  , timer      = 0
   }
 
 -- Function to render the game
 render :: GameState -> Picture
 render game
-  | menuShown game = renderDifficultyMenu game -- Render difficulty menu
-  | otherwise  = renderGame game             -- Render the game
+  | menuShown game = renderDifficultyMenu game  -- Render difficulty menu if menu is shown
+  | isGameOver game = renderGameOver game  -- Render game over screen
+  | otherwise = renderGame game  -- Render the game
+
+-- Function to render the game over screen
+renderGameOver :: GameState -> Picture
+renderGameOver game = pictures
+  [ drawText "Game Over!" (-150) (-300)
+  , drawTextSmall ("Difficulty: " ++ difficulty game) (-450) 100
+  , drawTextSmall ("Score: " ++ show (maximumTileValue (board game))) (-450) 50
+  , drawBoard (board game)
+  ]
+
+-- Function to restart the game
+restartGame :: GameState -> GameState
+restartGame game =
+  initialState { difficulty = difficulty game, menuShown = False, timer = 0 }
 
 -- Function to render the difficulty menu
 renderDifficultyMenu :: GameState -> Picture
@@ -118,10 +135,6 @@ handleInput e game =
 maximumTileValue :: [[Int]] -> Int
 maximumTileValue board = maximum (concat board)
 
--- Function to restart the game
-restartGame :: GameState -> GameState
-restartGame game =
-  initialState { difficulty = difficulty game, menuShown = False }
 
 -- Function to start the game with a chosen difficulty and set the grid size
 startGame :: String -> GameState -> GameState
@@ -130,13 +143,23 @@ startGame chosenDifficulty game =
 
 -- Function to update the game state
 update :: Float -> GameState -> GameState
-update _ game
+update dt game
   | menuShown game = game  -- If the menu is shown, do nothing
+  | isGameOver game = handleGameOver dt game  -- Handle game over and restart
   | otherwise = if maximumTileValue (board game) >= 2048
                 then game { menuShown = True }  -- Display a win message or perform win logic here
                 else game  -- Continue the game
 
+handleGameOver :: Float -> GameState -> GameState
+handleGameOver dt game =
+  let newTimer = timer game + dt
+    in if newTimer >= 3  -- Adjust the delay time (in seconds) before restarting
+    then restartGame game
+    else game { timer = newTimer }
 
+-- Function to check if the game is over
+isGameOver :: GameState -> Bool
+isGameOver game = not (isPossibleMove game)
 -- Helper functions for game logic
 moveAndAddRandom :: ([[Int]] -> [[Int]]) -> GameState -> GameState
 moveAndAddRandom moveFn game =
