@@ -3,6 +3,7 @@ import Graphics.Gloss.Interface.Pure.Game
 import System.Random
 import Data.List (transpose)
 
+
 -- Define the game state
 data GameState = GameState
   { board      :: [[Int]]
@@ -49,8 +50,8 @@ renderDifficultyMenu game = pictures
 -- Function to render the game with initial text for difficulty level
 renderGame :: GameState -> Picture
 renderGame game = pictures
-  [ drawTextSmall ("Difficulty: " ++ difficulty game) (-150) 210
-  , drawTextSmall ("Score: " ++ show (maximumTileValue (board game))) (-150) 250  -- score update
+  [ drawTextSmall ("Difficulty: " ++ difficulty game) (-450) 100
+  , drawTextSmall ("Score: " ++ show (maximumTileValue (board game))) (-450) 50  -- score update
   , drawBoard (board game)
   ]
 
@@ -194,5 +195,5 @@ moveRowDown row = replicate (length row - length mergedRow) 0 ++ mergedRow
 main :: IO ()
 main = do
   putStrLn "Welcome to 2048 Game!"
-  let windowSize = 400
+  let windowSize = 900
   play (InWindow "2048 Game" (windowSize, windowSize) (10, 10)) white 30 initialState render handleInput update
