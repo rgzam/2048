@@ -6,12 +6,12 @@ import Data.List (transpose)
 -- Define the game state
 data GameState = GameState
   { board      :: [[Int]]
-  , score      :: Int
+  , score      :: Int 
   , gen        :: StdGen
   , difficulty :: String
   , menuShown  :: Bool
   }
-
+  
 -- Function to set the initial grid size based on difficulty
 initialGridSize :: String -> Int
 initialGridSize difficulty =
@@ -25,7 +25,7 @@ initialGridSize difficulty =
 initialState :: GameState
 initialState = GameState
   { board      = replicate (initialGridSize "easy") (replicate (initialGridSize "easy") 0)
-  , score      = 0
+  , score      = 0 
   , gen        = mkStdGen 0
   , difficulty = "easy"
   , menuShown  = True
@@ -49,7 +49,8 @@ renderDifficultyMenu game = pictures
 -- Function to render the game with initial text for difficulty level
 renderGame :: GameState -> Picture
 renderGame game = pictures
-  [ drawTextSmall ("Difficulty: " ++ difficulty game) (-150) 210  -- Smaller text
+  [ drawTextSmall ("Difficulty: " ++ difficulty game) (-150) 210
+  , drawTextSmall ("Score: " ++ show (score game)) (-150) 250  -- score
   , drawBoard (board game)
   ]
 
@@ -134,7 +135,8 @@ moveAndAddRandom moveFn game =
       (x, y) = if null emptyCells then (0, 0) else head emptyCells
       newValue = if head (randomRs (0, 1) newGen :: [Int]) == 0 then 2 else 4
       updatedBoard = updateTile x y newValue newBoard
-  in game { board = updatedBoard, gen = newGen, menuShown = False }  -- Update menuShown as needed
+      updatedScore = maximum (concat updatedBoard)  -- gain max score in the grid number
+  in game { board = updatedBoard, gen = newGen, menuShown = False, score = score game + updatedScore }  -- update score
 
 findEmptyCells :: GameState -> StdGen -> Int -> ([(Int, Int)], StdGen)
 findEmptyCells game gen gridSize =
