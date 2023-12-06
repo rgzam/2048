@@ -1,8 +1,8 @@
 import Graphics.Gloss
 import Graphics.Gloss.Interface.Pure.Game
 import System.Random
-import Data.List (transpose)
-import Data.List (permutations)
+import Data.List (transpose, permutations)
+
 
 
 
@@ -132,7 +132,10 @@ startGame chosenDifficulty game =
 update :: Float -> GameState -> GameState
 update _ game
   | menuShown game = game  -- If the menu is shown, do nothing
-  | otherwise      = game  -- If the menu is not shown, do the update (or replace 'game' with your logic)
+  | otherwise = if maximumTileValue (board game) >= 2048
+                then game { menuShown = True }  -- Display a win message or perform win logic here
+                else game  -- Continue the game
+
 
 -- Helper functions for game logic
 moveAndAddRandom :: ([[Int]] -> [[Int]]) -> GameState -> GameState
@@ -142,30 +145,111 @@ moveAndAddRandom moveFn game =
       (x, y) = if null emptyCells then (0, 0) else head emptyCells
       newValue = if head (randomRs (0, 1) newGen :: [Int]) == 0 then 2 else 4
       updatedBoard = updateTile x y newValue newBoard
-      updatedScore = if updatedBoard /= board game  -- Check if merged
-                    then maximum (concat updatedBoard)  --Get the value of the max
+      updatedScore = if updatedBoard /= board game
+                    then maximum (concat updatedBoard)
                     else 0 
-  in game { board = updatedBoard, gen = newGen, menuShown = False, score = score game + updatedScore } 
+  in game { board = updatedBoard, gen = newGen, menuShown = False, score = score game + updatedScore }
 
+
+  -- Helper function to check if there are empty spaces on the board
+hasEmptySpaces :: [[Int]] -> Bool
+hasEmptySpaces board = any (any (== 0)) board
+  
+-- Function to check if a move is possible based on game rules
+isPossibleMove :: GameState -> Bool
+isPossibleMove game =
+      hasEmptySpaces (board game) ||
+      hasAdjacentTiles (board game) ||
+      any (not . isRowBlocked) (board game) ||
+      any (not . isColumnBlocked) (transpose (board game))
+  
+  -- Helper function to check if there are adjacent tiles with the same value
+hasAdjacentTiles :: [[Int]] -> Bool
+hasAdjacentTiles board =
+      any hasAdjacentTilesInRow board || any hasAdjacentTilesInRow (transpose board)
+  
+  -- Helper function to check if there are adjacent tiles with the same value in a row
+hasAdjacentTilesInRow :: [Int] -> Bool
+hasAdjacentTilesInRow row =
+      any (\(x, y) -> x == y) (adjacentPairs row)
+  
+  -- Helper function to check if a row is blocked (no empty spaces and no adjacent tiles with the same value)
+isRowBlocked :: [Int] -> Bool
+isRowBlocked row =
+      not (any (== 0) row || any (\(x, y) -> x == y) (adjacentPairs row))
+  
+  -- Helper function to check if a column is blocked (no empty spaces and no adjacent tiles with the same value)
+isColumnBlocked :: [Int] -> Bool
+isColumnBlocked = isRowBlocked
+
+  -- Function to check if a move to the left is possible
+canMoveLeft :: [[Int]] -> Bool
+canMoveLeft board = any movePossibleLeft board
+  
+  -- Function to check if a move to the right is possible
+canMoveRight :: [[Int]] -> Bool
+canMoveRight board = any movePossibleRight board
+  
+  -- Function to check if a move up is possible
+canMoveUp :: [[Int]] -> Bool
+canMoveUp board = any movePossibleUp (transpose board)
+  
+  -- Function to check if a move down is possible
+canMoveDown :: [[Int]] -> Bool
+canMoveDown board = any movePossibleDown (transpose board)
+  
+  -- Helper function to check if a move to the left is possible in a row
+movePossibleLeft :: [Int] -> Bool
+movePossibleLeft row = any canMerge (adjacentPairs row)
+  
+  -- Helper function to check if a move to the right is possible in a row
+movePossibleRight :: [Int] -> Bool
+movePossibleRight row = movePossibleLeft (reverse row)
+  
+  -- Helper function to check if a move up is possible in a column
+movePossibleUp :: [Int] -> Bool
+movePossibleUp = movePossibleLeft
+  
+  -- Helper function to check if a move down is possible in a column
+movePossibleDown :: [Int] -> Bool
+movePossibleDown = movePossibleRight
+  
+  -- Helper function to check if there are adjacent pairs that can merge
+canMerge :: (Int, Int) -> Bool
+canMerge (x, y) = x == y && x /= 0
+  
+  -- Helper function to generate adjacent pairs in a list
+adjacentPairs :: [a] -> [(a, a)]
+adjacentPairs [] = []
+adjacentPairs [_] = []
+adjacentPairs (x:y:xs) = (x, y) : adjacentPairs (y:xs)
+  
 findEmptyCells :: GameState -> StdGen -> Int -> ([(Int, Int)], StdGen)
 findEmptyCells game gen gridSize =
-    let indices = [(x, y) | x <- [0..gridSize-1], y <- [0..gridSize-1]]
-        emptyCells = filter (\(x, y) -> (board game !! y !! x) == 0) indices
-        shuffledCells = head (permutations emptyCells)  -- Shuffle the list of empty cells
-        (selectedCell, newGen) = randomElem shuffledCells gen  -- Select the first cell from the shuffled list
-    in ([selectedCell], newGen)
+  case randomElem emptyCells gen of
+    Just (selectedCell, newGen) -> ([selectedCell], newGen)
+    Nothing -> ([], gen)  -- Handle the case when the list is empty
+  where
+    indices = [(x, y) | x <- [0..gridSize-1], y <- [0..gridSize-1]]
+    emptyCells = filter (\(x, y) -> (board game !! y !! x) == 0) indices
+    shuffledCells = head (permutations emptyCells)
+
   
   -- Helper function to get a random element from a list
-randomElem :: [a] -> StdGen -> (a, StdGen)
+randomElem :: [a] -> StdGen -> Maybe (a, StdGen)
+randomElem [] gen = Nothing
 randomElem list gen =
     let (index, newGen) = randomR (0, length list - 1) gen
-    in (list !! index, newGen)
+    in Just (list !! index, newGen)
+  
+  
 
 updateTile :: Int -> Int -> Int -> [[Int]] -> [[Int]]
 updateTile x y val board =
   take y board ++
   [take x (board !! y) ++ [val] ++ drop (x + 1) (board !! y)] ++
   drop (y + 1) board
+
 
 moveLeft :: [[Int]] -> [[Int]]
 moveLeft = map moveRowLeft
