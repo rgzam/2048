@@ -68,6 +68,7 @@ renderDifficultyMenu game = pictures
   , drawText "1. Easy" (-150) 50
   , drawText "2. Medium" (-150) 0
   , drawText "3. Hard" (-150) (-50)
+  , drawText "Welcome to 2048 Game!" (-250) 220
   ]
 
 -- Function to render the game with initial text for difficulty level

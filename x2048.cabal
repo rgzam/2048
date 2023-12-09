@@ -68,9 +68,12 @@ executable x2048
 
     -- Other library packages from which modules are imported.
     build-depends:
-        base >= 4.14 && < 5,
-        gloss >= 1.13.2.2 && < 1.15,
-        random
+    base >= 4.14 && < 5,
+    gloss >= 1.13 && < 2,
+    random,
+    random-shuffle,
+    extra
+
 
     -- Directories containing source files.
     hs-source-dirs:   app
