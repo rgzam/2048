@@ -9,12 +9,13 @@ import Data.List (transpose, permutations)
 -- Define the game state
 data GameState = GameState
   { board      :: [[Int]]
-  , score      :: Int
+  , score      :: Int   -- Add this field
   , gen        :: StdGen
   , difficulty :: String
   , menuShown  :: Bool
-  , timer      :: Float  -- Timer for game over screen
-  }
+  , timer      :: Float
+}
+
 
 -- Function to set the initial grid size based on difficulty
 initialGridSize :: String -> Int
@@ -67,12 +68,15 @@ renderDifficultyMenu game = pictures
   ]
 
 -- Function to render the game with initial text for difficulty level
+-- Function to render the game with initial text for difficulty level
 renderGame :: GameState -> Picture
 renderGame game = pictures
   [ drawTextSmall ("Difficulty: " ++ difficulty game) (-450) 100
-  , drawTextSmall ("Score: " ++ show (maximumTileValue (board game))) (-450) 50  -- score update
+  , drawTextSmall ("Score: " ++ show (score game)) (-450) 50
+  , drawTextSmall ("Menu (M)" ) (-450) 0  -- Display "Menu" when menu is active
   , drawBoard (board game)
   ]
+
 
 -- Function to draw smaller text on the screen
 drawTextSmall :: String -> Float -> Float -> Picture
@@ -129,12 +133,17 @@ handleInput e game =
     EventKey (SpecialKey KeyLeft) Down _ _ -> moveAndAddRandom moveLeft game
     EventKey (SpecialKey KeyRight) Down _ _ -> moveAndAddRandom moveRight game
     EventKey (Char 'r') Down _ _ -> restartGame game  -- Handle restart option
+    EventKey (Char 'm') Down _ _ -> goToMenu game
     _ -> game
 
 -- Helper function to find the max value
 maximumTileValue :: [[Int]] -> Int
 maximumTileValue board = maximum (concat board)
 
+-- Function to go back to the menu
+goToMenu :: GameState -> GameState
+goToMenu game =
+  initialState { difficulty = difficulty game, menuShown = True, timer = 0, score = 0, gen = mkStdGen 0 }
 
 -- Function to start the game with a chosen difficulty and set the grid size
 startGame :: String -> GameState -> GameState
@@ -161,17 +170,40 @@ handleGameOver dt game =
 isGameOver :: GameState -> Bool
 isGameOver game = not (isPossibleMove game)
 -- Helper functions for game logic
+-- Helper function to move and add a random tile
 moveAndAddRandom :: ([[Int]] -> [[Int]]) -> GameState -> GameState
 moveAndAddRandom moveFn game =
-  let newBoard = moveFn (board game)
-      (emptyCells, newGen) = findEmptyCells game (gen game) (length (board game))
-      (x, y) = if null emptyCells then (0, 0) else head emptyCells
-      newValue = if head (randomRs (0, 1) newGen :: [Int]) == 0 then 2 else 4
-      updatedBoard = updateTile x y newValue newBoard
-      updatedScore = if updatedBoard /= board game
-                    then maximum (concat updatedBoard)
-                    else 0 
-  in game { board = updatedBoard, gen = newGen, menuShown = False, score = score game + updatedScore }
+  let
+    newBoard = moveFn (board game)
+    (emptyCells, newGen) = findEmptyCells game (gen game) (length (board game))
+    
+    -- Check if any movement occurred
+    movementOccurred = newBoard /= (board game)
+    
+    -- Update the board only if movement occurred
+    updatedBoard = if movementOccurred then newBoard else board game
+    
+    -- Choose a random empty cell for the new tile
+    (x, y) = if null emptyCells then (0, 0) else head emptyCells
+    
+    -- Generate a new tile value (either 2 or 4)
+    newValue = if head (randomRs (0, 1) newGen :: [Int]) == 0 then 2 else 4
+    
+    -- Update the board with the new tile
+    finalBoard = updateTile x y newValue updatedBoard
+    
+    -- Update the score as the sum of all tile values
+    updatedScore = sum (concat finalBoard)
+  in
+    game { board = finalBoard, gen = newGen, menuShown = False, score = updatedScore }
+
+
+
+-- Helper function to calculate the score based on merged tiles
+calculateMergedScore :: [[Int]] -> [[Int]] -> Int
+calculateMergedScore oldBoard newBoard =
+  sum [tileValue | (oldRow, newRow) <- zip oldBoard newBoard, (oldTile, newTile) <- zip oldRow newRow, newTile > oldTile, let tileValue = newTile]
+
 
 
   -- Helper function to check if there are empty spaces on the board
@@ -282,19 +314,25 @@ moveRowLeft row = mergedRow ++ replicate (length row - length mergedRow) 0
   where
     mergedRow = mergeRow $ filter (/= 0) row
 
+moveRowRight :: [Int] -> [Int]
+moveRowRight row = replicate (length row - length mergedRow) 0 ++ mergedRow
+      where
+        mergedRow = mergeRow $ filter (/= 0) (reverse row)
+
 mergeRow :: [Int] -> [Int]
 mergeRow [] = []
 mergeRow [x] = [x]
 mergeRow (x1 : x2 : xs)
   | x1 == x2 = x1 * 2 : mergeRow xs
   | otherwise = x1 : mergeRow (x2 : xs)
+    
 
 
 moveRight :: [[Int]] -> [[Int]]
 moveRight = map (reverse . moveRowLeft . reverse)
 
 moveUp :: [[Int]] -> [[Int]]
-moveUp = transpose . map moveRowUp . transpose
+moveUp board = transpose $ map moveRowUp $ transpose board
 
 moveDown :: [[Int]] -> [[Int]]
 moveDown = transpose . map moveRowDown . transpose
@@ -304,10 +342,11 @@ moveRowUp row = mergedRow ++ replicate (length row - length mergedRow) 0
   where
     mergedRow = mergeRow $ filter (/= 0) row
 
+
 moveRowDown :: [Int] -> [Int]
 moveRowDown row = replicate (length row - length mergedRow) 0 ++ mergedRow
-  where
-    mergedRow = mergeRow $ filter (/= 0) row
+      where
+        mergedRow = mergeRow $ filter (/= 0) (reverse row)
 
 main :: IO ()
 main = do
