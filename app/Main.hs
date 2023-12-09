@@ -78,6 +78,7 @@ renderGame game = pictures
   [ drawTextSmall ("Difficulty: " ++ difficulty game) (-450) 100
   , drawTextSmall ("Score: " ++ show (score game)) (-450) 50
   , drawTextSmall ("Menu (M)" ) (-450) 0  -- Display "Menu" when menu is active
+  , drawTextSmall ("New Game (R)" ) (-450) (-50)  
   , drawBoard (board game)
   ]
 
