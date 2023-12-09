@@ -46,12 +46,15 @@ render game
 
 -- Function to render the game over screen
 renderGameOver :: GameState -> Picture
-renderGameOver game = pictures
-  [ drawText "Game Over!" (-150) (-300)
-  , drawTextSmall ("Difficulty: " ++ difficulty game) (-450) 100
-  , drawTextSmall ("Score: " ++ show (maximumTileValue (board game))) (-450) 50
-  , drawBoard (board game)
-  ]
+renderGameOver game
+  | timer game < 3.0 = pictures
+      [ drawText "Game Over!" (-150) (-300)
+      , drawTextSmall ("Difficulty: " ++ difficulty game) (-450) 100
+      , drawTextSmall ("Score: " ++ show (maximumTileValue (board game))) (-450) 50
+      , drawBoard (board game)
+      ]
+  | otherwise = renderDifficultyMenu game
+
 
 -- Function to restart the game
 restartGame :: GameState -> GameState
@@ -160,11 +163,15 @@ update dt game
                 else game  -- Continue the game
 
 handleGameOver :: Float -> GameState -> GameState
-handleGameOver dt game =
-  let newTimer = timer game + dt
-    in if newTimer >= 3  -- Adjust the delay time (in seconds) before restarting
-    then restartGame game
-    else game { timer = newTimer }
+handleGameOver dt game
+  | isGameOver game =
+    let newTimer = timer game + dt
+    in if newTimer >= 3.0  -- Adjust the delay time (in seconds) before redirecting
+      then goToMenu game  -- Redirect to menu when the game is over
+      else game { timer = newTimer }
+  | otherwise = game
+
+
 
 -- Function to check if the game is over
 isGameOver :: GameState -> Bool
