@@ -9,12 +9,13 @@ import Data.List (transpose, permutations)
 -- Define the game state
 data GameState = GameState
   { board      :: [[Int]]
-  , score      :: Int   -- Add this field
+  , score      :: Int
+  , bestScore  :: Int  -- New field for best score
   , gen        :: StdGen
   , difficulty :: String
   , menuShown  :: Bool
   , timer      :: Float
-}
+  }
 
 
 -- Function to set the initial grid size based on difficulty
@@ -31,11 +32,12 @@ initialState :: GameState
 initialState = GameState
   { board      = replicate (initialGridSize "easy") (replicate (initialGridSize "easy") 0)
   , score      = 0
+  , bestScore  = 0  -- Initialize best score to 0
   , gen        = mkStdGen 0
   , difficulty = "easy"
   , menuShown  = True
   , timer      = 0
-  }
+}
 
 -- Function to render the game
 render :: GameState -> Picture
@@ -44,6 +46,9 @@ render game
   | isGameOver game = renderGameOver game  -- Render game over screen
   | otherwise = renderGame game  -- Render the game
 
+drawTextSmall :: String -> Float -> Float -> Picture
+drawTextSmall textString x y = translate x y $ scale 0.2 0.2 $ color black $ text textString
+
 -- Function to render the game over screen
 renderGameOver :: GameState -> Picture
 renderGameOver game
@@ -51,15 +56,16 @@ renderGameOver game
       [ drawText "Game Over!" (-150) (-300)
       , drawTextSmall ("Difficulty: " ++ difficulty game) (-450) 100
       , drawTextSmall ("Score: " ++ show (maximumTileValue (board game))) (-450) 50
+      , drawTextSmall ("Best Score: " ++ show (bestScore game)) (-450) (-50)  -- Corrected y-coordinate
       , drawBoard (board game)
       ]
   | otherwise = renderDifficultyMenu game
 
 
--- Function to restart the game
 restartGame :: GameState -> GameState
 restartGame game =
-  initialState { difficulty = difficulty game, menuShown = False, timer = 0 }
+  initialState { difficulty = difficulty game, menuShown = False, timer = 0, bestScore = bestScore game }  -- Keep best score when restarting
+
 
 -- Function to render the difficulty menu
 renderDifficultyMenu :: GameState -> Picture
@@ -79,13 +85,11 @@ renderGame game = pictures
   , drawTextSmall ("Score: " ++ show (score game)) (-450) 50
   , drawTextSmall ("Menu (M)" ) (-450) 0  -- Display "Menu" when menu is active
   , drawTextSmall ("New Game (R)" ) (-450) (-50)  
+  ,drawTextSmall ("Best Score: " ++ show (bestScore game)) (-450) (-100)  -- Corrected y-coordinate
   , drawBoard (board game)
   ]
 
 
--- Function to draw smaller text on the screen
-drawTextSmall :: String -> Float -> Float -> Picture
-drawTextSmall textString x y = translate x y $ scale 0.2 0.2 $ color black $ text textString
 
 drawBoard :: [[Int]] -> Picture
 drawBoard board = pictures $ concat
@@ -148,7 +152,7 @@ maximumTileValue board = maximum (concat board)
 -- Function to go back to the menu
 goToMenu :: GameState -> GameState
 goToMenu game =
-  initialState { difficulty = difficulty game, menuShown = True, timer = 0, score = 0, gen = mkStdGen 0 }
+  initialState { difficulty = difficulty game, menuShown = True, timer = 0, score = 0, bestScore = bestScore game, gen = mkStdGen 0 }  -- Keep best score when going to menu
 
 -- Function to start the game with a chosen difficulty and set the grid size
 startGame :: String -> GameState -> GameState
@@ -158,21 +162,26 @@ startGame chosenDifficulty game =
 -- Function to update the game state
 update :: Float -> GameState -> GameState
 update dt game
-  | menuShown game = game  -- If the menu is shown, do nothing
-  | isGameOver game = handleGameOver dt game  -- Handle game over and restart
-  | otherwise = if maximumTileValue (board game) >= 2048
-                then game { menuShown = True }  -- Display a win message or perform win logic here
-                else game  -- Continue the game
+  | menuShown game = game
+  | isGameOver game = handleGameOver dt game
+  | otherwise =
+    let currentScore = maximumTileValue (board game)
+        newBestScore = max (bestScore game) currentScore
+    in
+      if currentScore >= 2048
+        then game { menuShown = True, bestScore = newBestScore }
+        else game { bestScore = newBestScore }
+
 
 handleGameOver :: Float -> GameState -> GameState
 handleGameOver dt game
   | isGameOver game =
     let newTimer = timer game + dt
-    in if newTimer >= 3.0  -- Adjust the delay time (in seconds) before redirecting
-      then goToMenu game  -- Redirect to menu when the game is over
-      else game { timer = newTimer }
+        newBestScore = max (bestScore game) (maximumTileValue (board game))  -- Update best score
+    in if newTimer >= 3.0
+      then goToMenu game { bestScore = newBestScore }  -- Pass updated best score to goToMenu
+      else game { timer = newTimer, bestScore = newBestScore }
   | otherwise = game
-
 
 
 -- Function to check if the game is over
@@ -203,8 +212,12 @@ moveAndAddRandom moveFn game =
     
     -- Update the score as the sum of all tile values
     updatedScore = sum (concat finalBoard)
+    
+    -- Update the best score if needed
+    updatedBestScore = max (bestScore game) updatedScore
   in
-    game { board = finalBoard, gen = newGen, menuShown = False, score = updatedScore }
+    game { board = finalBoard, gen = newGen, menuShown = False, score = updatedScore, bestScore = updatedBestScore }
+
 
 
 
