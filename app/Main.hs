@@ -361,6 +361,6 @@ main :: IO ()
 main = do
   putStrLn "Welcome to 2048 Game!"
   let windowSize = 900
-      bgColor = makeColorI 210 180 140 255  -- RGB (240, 248, 255) with full opacity
+      bgColor = makeColorI 240 248 255 255  -- RGB (240, 248, 255) with full opacity
 
   play (InWindow "2048 Game" (windowSize, windowSize) (10, 10)) bgColor 30 initialState render handleInput update
