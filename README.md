@@ -7,5 +7,7 @@ Welcome to our 2048 clone game project! This game is a terminal-based implementa
 - Use the arrow keys (up, down, left, right) to move the tiles in the corresponding direction.
 - Tiles with the same value will merge when moved into each other.
 - The goal is to reach the 2048 tile by merging smaller tiles.
-
+  
+![alt text](https://github.com/rgzam/2048/blob/main/Screenshot%202023-12-03%20at%206.41.21%E2%80%AFPM.png)
 ![alt text](https://github.com/rgzam/2048/blob/main/Screenshot%202023-12-10%20at%209.59.08%E2%80%AFPM.png)
+![alt text](https://github.com/rgzam/2048/blob/main/Screenshot%202023-12-09%20at%2010.16.58%E2%80%AFPM.png)
