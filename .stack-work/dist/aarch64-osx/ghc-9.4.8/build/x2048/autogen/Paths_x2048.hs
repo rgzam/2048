@@ -42,12 +42,12 @@ getBinDir, getLibDir, getDynLibDir, getDataDir, getLibexecDir, getSysconfDir :: 
 
 
 bindir, libdir, dynlibdir, datadir, libexecdir, sysconfdir :: FilePath
-bindir     = "/Users/xiaolongbao/2048/2048-1/.stack-work/install/aarch64-osx/ce99b8a88e2643ca8622e8c8afa9c33a8a6cb2a7fe5293c1a2e49d3f1461652d/9.4.8/bin"
-libdir     = "/Users/xiaolongbao/2048/2048-1/.stack-work/install/aarch64-osx/ce99b8a88e2643ca8622e8c8afa9c33a8a6cb2a7fe5293c1a2e49d3f1461652d/9.4.8/lib/aarch64-osx-ghc-9.4.8/x2048-0.1.0.0-3kzuzj3nxy78APUMTCDu1M-x2048"
-dynlibdir  = "/Users/xiaolongbao/2048/2048-1/.stack-work/install/aarch64-osx/ce99b8a88e2643ca8622e8c8afa9c33a8a6cb2a7fe5293c1a2e49d3f1461652d/9.4.8/lib/aarch64-osx-ghc-9.4.8"
-datadir    = "/Users/xiaolongbao/2048/2048-1/.stack-work/install/aarch64-osx/ce99b8a88e2643ca8622e8c8afa9c33a8a6cb2a7fe5293c1a2e49d3f1461652d/9.4.8/share/aarch64-osx-ghc-9.4.8/x2048-0.1.0.0"
-libexecdir = "/Users/xiaolongbao/2048/2048-1/.stack-work/install/aarch64-osx/ce99b8a88e2643ca8622e8c8afa9c33a8a6cb2a7fe5293c1a2e49d3f1461652d/9.4.8/libexec/aarch64-osx-ghc-9.4.8/x2048-0.1.0.0"
-sysconfdir = "/Users/xiaolongbao/2048/2048-1/.stack-work/install/aarch64-osx/ce99b8a88e2643ca8622e8c8afa9c33a8a6cb2a7fe5293c1a2e49d3f1461652d/9.4.8/etc"
+bindir     = "/Users/xiaolongbao/Desktop/2048-1/.stack-work/install/aarch64-osx/ce99b8a88e2643ca8622e8c8afa9c33a8a6cb2a7fe5293c1a2e49d3f1461652d/9.4.8/bin"
+libdir     = "/Users/xiaolongbao/Desktop/2048-1/.stack-work/install/aarch64-osx/ce99b8a88e2643ca8622e8c8afa9c33a8a6cb2a7fe5293c1a2e49d3f1461652d/9.4.8/lib/aarch64-osx-ghc-9.4.8/x2048-0.1.0.0-3kzuzj3nxy78APUMTCDu1M-x2048"
+dynlibdir  = "/Users/xiaolongbao/Desktop/2048-1/.stack-work/install/aarch64-osx/ce99b8a88e2643ca8622e8c8afa9c33a8a6cb2a7fe5293c1a2e49d3f1461652d/9.4.8/lib/aarch64-osx-ghc-9.4.8"
+datadir    = "/Users/xiaolongbao/Desktop/2048-1/.stack-work/install/aarch64-osx/ce99b8a88e2643ca8622e8c8afa9c33a8a6cb2a7fe5293c1a2e49d3f1461652d/9.4.8/share/aarch64-osx-ghc-9.4.8/x2048-0.1.0.0"
+libexecdir = "/Users/xiaolongbao/Desktop/2048-1/.stack-work/install/aarch64-osx/ce99b8a88e2643ca8622e8c8afa9c33a8a6cb2a7fe5293c1a2e49d3f1461652d/9.4.8/libexec/aarch64-osx-ghc-9.4.8/x2048-0.1.0.0"
+sysconfdir = "/Users/xiaolongbao/Desktop/2048-1/.stack-work/install/aarch64-osx/ce99b8a88e2643ca8622e8c8afa9c33a8a6cb2a7fe5293c1a2e49d3f1461652d/9.4.8/etc"
 
 getBinDir     = catchIO (getEnv "x2048_bindir")     (\_ -> return bindir)
 getLibDir     = catchIO (getEnv "x2048_libdir")     (\_ -> return libdir)
