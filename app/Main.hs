@@ -19,22 +19,24 @@ data GameState = GameState
 
 
 -- Function to set the initial grid size based on difficulty
+-- Function to set the initial grid size based on difficulty
 initialGridSize :: String -> Int
 initialGridSize difficulty =
   case difficulty of
-    "easy"   -> 4
-    "medium" -> 5
-    "hard"   -> 6
+    "Normal"   -> 4
+    "Beginner" -> 5
+    "hard"   -> 3  -- Change the grid size for "hard" difficulty to 3x3
     _        -> error "Invalid difficulty"
+
 
 -- Initial game state with a specified grid size
 initialState :: GameState
 initialState = GameState
-  { board      = replicate (initialGridSize "easy") (replicate (initialGridSize "easy") 0)
+  { board      = replicate (initialGridSize "Normal") (replicate (initialGridSize "Normal") 0)
   , score      = 0
   , bestScore  = 0  -- Initialize best score to 0
   , gen        = mkStdGen 0
-  , difficulty = "easy"
+  , difficulty = "Normal"
   , menuShown  = True
   , timer      = 0
 }
@@ -71,8 +73,8 @@ restartGame game =
 renderDifficultyMenu :: GameState -> Picture
 renderDifficultyMenu game = pictures
   [ drawText "Choose Difficulty:" (-150) 150
-  , drawText "1. Easy" (-150) 50
-  , drawText "2. Medium" (-150) 0
+  , drawText "1. Beginner" (-150) 50
+  , drawText "2. Normal" (-150) 0
   , drawText "3. Hard" (-150) (-50)
   , drawText "Welcome to 2048 Game!" (-250) 220
   ]
@@ -134,8 +136,8 @@ drawText textString x y = translate x y $ scale 0.3 0.3 $ color black $ text tex
 handleInput :: Event -> GameState -> GameState
 handleInput e game =
   case e of
-    EventKey (Char '1') Down _ _ -> startGame "easy" game
-    EventKey (Char '2') Down _ _ -> startGame "medium" game
+    EventKey (Char '2') Down _ _ -> startGame "Normal" game
+    EventKey (Char '1') Down _ _ -> startGame "Beginner" game
     EventKey (Char '3') Down _ _ -> startGame "hard" game
     EventKey (SpecialKey KeyUp) Down _ _ -> moveAndAddRandom moveUp game
     EventKey (SpecialKey KeyDown) Down _ _ -> moveAndAddRandom moveDown game
