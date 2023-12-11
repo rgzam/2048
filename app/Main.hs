@@ -137,13 +137,15 @@ handleInput e game =
     EventKey (Char '1') Down _ _ -> startGame "easy" game
     EventKey (Char '2') Down _ _ -> startGame "medium" game
     EventKey (Char '3') Down _ _ -> startGame "hard" game
-    EventKey (SpecialKey KeyUp) Down _ _ -> moveAndAddRandom moveDown game
-    EventKey (SpecialKey KeyDown) Down _ _ -> moveAndAddRandom moveUp game
+    EventKey (SpecialKey KeyUp) Down _ _ -> moveAndAddRandom moveUp game
+    EventKey (SpecialKey KeyDown) Down _ _ -> moveAndAddRandom moveDown game
     EventKey (SpecialKey KeyLeft) Down _ _ -> moveAndAddRandom moveLeft game
     EventKey (SpecialKey KeyRight) Down _ _ -> moveAndAddRandom moveRight game
-    EventKey (Char 'r') Down _ _ -> restartGame game  -- Handle restart option
+    EventKey (Char 'r') Down _ _ -> restartGame game
     EventKey (Char 'm') Down _ _ -> goToMenu game
     _ -> game
+
+
 
 -- Helper function to find the max value
 maximumTileValue :: [[Int]] -> Int
@@ -353,22 +355,26 @@ mergeRow (x1 : x2 : xs)
 moveRight :: [[Int]] -> [[Int]]
 moveRight = map (reverse . moveRowLeft . reverse)
 
+-- Function to move the tiles up
+-- Function to move the tiles up
 moveUp :: [[Int]] -> [[Int]]
-moveUp board = transpose $ map moveRowUp $ transpose board
+moveUp board = transpose $ map moveRowUp (transpose board)
 
+-- Function to move the tiles down
 moveDown :: [[Int]] -> [[Int]]
-moveDown = transpose . map moveRowDown . transpose
+moveDown board = transpose $ map moveRowDown (transpose board)
 
+-- Helper function to move a row of tiles up
 moveRowUp :: [Int] -> [Int]
-moveRowUp row = mergedRow ++ replicate (length row - length mergedRow) 0
+moveRowUp row = replicate (length row - length mergedRow) 0 ++ mergedRow
   where
     mergedRow = mergeRow $ filter (/= 0) row
 
-
 moveRowDown :: [Int] -> [Int]
-moveRowDown row = replicate (length row - length mergedRow) 0 ++ mergedRow
-      where
-        mergedRow = mergeRow $ filter (/= 0) (reverse row)
+moveRowDown row = mergedRow ++ replicate (length row - length mergedRow) 0
+  where
+    mergedRow = reverse $ mergeRow $ filter (/= 0) (reverse row)
+
 
 main :: IO ()
 main = do
