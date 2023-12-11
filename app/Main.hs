@@ -4,8 +4,6 @@ import System.Random
 import Data.List (transpose, permutations)
 
 
-
-
 -- Define the game state
 data GameState = GameState
   { board      :: [[Int]]
@@ -19,24 +17,22 @@ data GameState = GameState
 
 
 -- Function to set the initial grid size based on difficulty
--- Function to set the initial grid size based on difficulty
 initialGridSize :: String -> Int
 initialGridSize difficulty =
   case difficulty of
-    "Normal"   -> 4
-    "Beginner" -> 5
-    "hard"   -> 3  -- Change the grid size for "hard" difficulty to 3x3
+    "easy"   -> 4
+    "medium" -> 5
+    "hard"   -> 6
     _        -> error "Invalid difficulty"
-
 
 -- Initial game state with a specified grid size
 initialState :: GameState
 initialState = GameState
-  { board      = replicate (initialGridSize "Normal") (replicate (initialGridSize "Normal") 0)
+  { board      = replicate (initialGridSize "easy") (replicate (initialGridSize "easy") 0)
   , score      = 0
   , bestScore  = 0  -- Initialize best score to 0
   , gen        = mkStdGen 0
-  , difficulty = "Normal"
+  , difficulty = "easy"
   , menuShown  = True
   , timer      = 0
 }
@@ -73,8 +69,8 @@ restartGame game =
 renderDifficultyMenu :: GameState -> Picture
 renderDifficultyMenu game = pictures
   [ drawText "Choose Difficulty:" (-150) 150
-  , drawText "1. Beginner" (-150) 50
-  , drawText "2. Normal" (-150) 0
+  , drawText "1. Easy" (-150) 50
+  , drawText "2. Medium" (-150) 0
   , drawText "3. Hard" (-150) (-50)
   , drawText "Welcome to 2048 Game!" (-250) 220
   ]
@@ -136,18 +132,16 @@ drawText textString x y = translate x y $ scale 0.3 0.3 $ color black $ text tex
 handleInput :: Event -> GameState -> GameState
 handleInput e game =
   case e of
-    EventKey (Char '2') Down _ _ -> startGame "Normal" game
-    EventKey (Char '1') Down _ _ -> startGame "Beginner" game
+    EventKey (Char '1') Down _ _ -> startGame "easy" game
+    EventKey (Char '2') Down _ _ -> startGame "medium" game
     EventKey (Char '3') Down _ _ -> startGame "hard" game
-    EventKey (SpecialKey KeyUp) Down _ _ -> moveAndAddRandom moveUp game
-    EventKey (SpecialKey KeyDown) Down _ _ -> moveAndAddRandom moveDown game
+    EventKey (SpecialKey KeyUp) Down _ _ -> moveAndAddRandom moveDown game
+    EventKey (SpecialKey KeyDown) Down _ _ -> moveAndAddRandom moveUp game
     EventKey (SpecialKey KeyLeft) Down _ _ -> moveAndAddRandom moveLeft game
     EventKey (SpecialKey KeyRight) Down _ _ -> moveAndAddRandom moveRight game
-    EventKey (Char 'r') Down _ _ -> restartGame game
+    EventKey (Char 'r') Down _ _ -> restartGame game  -- Handle restart option
     EventKey (Char 'm') Down _ _ -> goToMenu game
     _ -> game
-
-
 
 -- Helper function to find the max value
 maximumTileValue :: [[Int]] -> Int
@@ -193,10 +187,10 @@ isGameOver :: GameState -> Bool
 isGameOver game = not (isPossibleMove game)
 -- Helper functions for game logic
 -- Helper function to move and add a random tile
-moveAndAddRandom :: ([[Int]] -> [[Int]]) -> GameState -> GameState
+moveAndAddRandom :: ([[Int]] -> ([[Int]], Int)) -> GameState -> GameState
 moveAndAddRandom moveFn game =
   let
-    newBoard = moveFn (board game)
+    (newBoard, moveScore) = moveFn (board game)
     (emptyCells, newGen) = findEmptyCells game (gen game) (length (board game))
     
     -- Check if any movement occurred
@@ -215,12 +209,12 @@ moveAndAddRandom moveFn game =
     finalBoard = updateTile x y newValue updatedBoard
     
     -- Update the score as the sum of all tile values
-    updatedScore = sum (concat finalBoard)
+    updatedScore = score game + moveScore
     
     -- Update the best score if needed
     updatedBestScore = max (bestScore game) updatedScore
   in
-    game { board = finalBoard, gen = newGen, menuShown = False, score = updatedScore, bestScore = updatedBestScore }
+ game { board = finalBoard, gen = newGen, menuShown = False, score = updatedScore, bestScore = updatedBestScore }
 
 
 
@@ -332,51 +326,45 @@ updateTile x y val board =
   drop (y + 1) board
 
 
-moveLeft :: [[Int]] -> [[Int]]
-moveLeft = map moveRowLeft
+moveLeft :: [[Int]] -> ([[Int]], Int)
+moveLeft board = let (newBoard, scores) = unzip $ map moveRowLeft board
+                 in (newBoard, sum scores)
 
-moveRowLeft :: [Int] -> [Int]
-moveRowLeft row = mergedRow ++ replicate (length row - length mergedRow) 0
-  where
-    mergedRow = mergeRow $ filter (/= 0) row
+moveRowLeft :: [Int] -> ([Int], Int)
+moveRowLeft row = let (mergedRow, score) = mergeRow $ filter (/= 0) row
+                  in (mergedRow ++ replicate (length row - length mergedRow) 0, score)
 
-moveRowRight :: [Int] -> [Int]
-moveRowRight row = replicate (length row - length mergedRow) 0 ++ mergedRow
-      where
-        mergedRow = mergeRow $ filter (/= 0) (reverse row)
+moveRight :: [[Int]] -> ([[Int]], Int)
+moveRight board = let (newBoard, scores) = unzip $ map moveRowRight board
+                  in (newBoard, sum scores)
 
-mergeRow :: [Int] -> [Int]
-mergeRow [] = []
-mergeRow [x] = [x]
+moveRowRight :: [Int] -> ([Int], Int)
+moveRowRight row = let (mergedRow, score) = mergeRow $ filter (/= 0) (reverse row)
+                   in (replicate (length row - length mergedRow) 0 ++ mergedRow, score)
+
+
+mergeRow :: [Int] -> ([Int], Int)
+mergeRow [] = ([], 0)
+mergeRow [x] = ([x], 0)
 mergeRow (x1 : x2 : xs)
-  | x1 == x2 = x1 * 2 : mergeRow xs
-  | otherwise = x1 : mergeRow (x2 : xs)
-    
+  | x1 == x2 = let (merged, score) = mergeRow xs in (x1 * 2 : merged, x1 * 2 + score)
+  | otherwise = let (merged, score) = mergeRow (x2 : xs) in (x1 : merged, score)
 
+moveUp :: [[Int]] -> ([[Int]], Int)
+moveUp board = let (newBoard, scores) = unzip $ map moveRowUp (transpose board)
+               in (transpose newBoard, sum scores)
 
-moveRight :: [[Int]] -> [[Int]]
-moveRight = map (reverse . moveRowLeft . reverse)
+moveRowUp :: [Int] -> ([Int], Int)
+moveRowUp row = let (mergedRow, score) = mergeRow $ filter (/= 0) row
+                in (mergedRow ++ replicate (length row - length mergedRow) 0, score)
 
--- Function to move the tiles up
--- Function to move the tiles up
-moveUp :: [[Int]] -> [[Int]]
-moveUp board = transpose $ map moveRowUp (transpose board)
+moveDown :: [[Int]] -> ([[Int]], Int)
+moveDown board = let (newBoard, scores) = unzip $ map moveRowDown (transpose board)
+                 in (transpose newBoard, sum scores)
 
--- Function to move the tiles down
-moveDown :: [[Int]] -> [[Int]]
-moveDown board = transpose $ map moveRowDown (transpose board)
-
--- Helper function to move a row of tiles up
-moveRowUp :: [Int] -> [Int]
-moveRowUp row = replicate (length row - length mergedRow) 0 ++ mergedRow
-  where
-    mergedRow = mergeRow $ filter (/= 0) row
-
-moveRowDown :: [Int] -> [Int]
-moveRowDown row = mergedRow ++ replicate (length row - length mergedRow) 0
-  where
-    mergedRow = reverse $ mergeRow $ filter (/= 0) (reverse row)
-
+moveRowDown :: [Int] -> ([Int], Int)
+moveRowDown row = let (mergedRow, score) = mergeRow $ filter (/= 0) (reverse row)
+                  in (replicate (length row - length mergedRow) 0 ++ mergedRow, score)
 
 main :: IO ()
 main = do
