@@ -3,7 +3,6 @@ import Graphics.Gloss.Interface.Pure.Game
 import System.Random
 import Data.List (transpose, permutations)
 
-
 -- Define the game state
 data GameState = GameState
   { board      :: [[Int]]
@@ -342,13 +341,14 @@ moveRowRight :: [Int] -> ([Int], Int)
 moveRowRight row = let (mergedRow, score) = mergeRow $ filter (/= 0) (reverse row)
                    in (replicate (length row - length mergedRow) 0 ++ mergedRow, score)
 
-
 mergeRow :: [Int] -> ([Int], Int)
 mergeRow [] = ([], 0)
 mergeRow [x] = ([x], 0)
-mergeRow (x1 : x2 : xs)
-  | x1 == x2 = let (merged, score) = mergeRow xs in (x1 * 2 : merged, x1 * 2 + score)
-  | otherwise = let (merged, score) = mergeRow (x2 : xs) in (x1 : merged, score)
+mergeRow (x1:x2:xs)
+  | x1 == x2 = let (merged, score) = mergeRow xs 
+               in (x1 * 2 : merged, x1 * 2 + score) 
+  | otherwise = let (merged, score) = mergeRow (x2:xs) 
+                in (x1 : merged, score)
 
 moveUp :: [[Int]] -> ([[Int]], Int)
 moveUp board = let (newBoard, scores) = unzip $ map moveRowUp (transpose board)
